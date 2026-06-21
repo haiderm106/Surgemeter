@@ -5,57 +5,194 @@
 
 <title>Pressure Surge Detection</title>
 
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/luxon"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon"></script>
+
 
 <style>
 
+
 body {
-    font-family: Arial;
-    margin:40px;
-    background:#f4f4f4;
+
+font-family: Arial;
+
+margin:40px;
+
+background:#f4f4f4;
+
 }
+
 
 
 .container{
 
+
 background:white;
+
 padding:30px;
+
 border-radius:12px;
 
+
 }
+
 
 
 button,input{
 
+
 padding:10px;
+
 margin:8px;
 
+
 }
+
 
 
 button{
 
+
 background:#0066cc;
+
 color:white;
+
 border:none;
+
 border-radius:5px;
+
 cursor:pointer;
 
+
 }
+
 
 
 button:hover{
 
+
 background:#004999;
 
+
 }
+
 
 
 canvas{
 
+
 margin-top:30px;
 
+
 }
+
+
+
+
+
+/* Progress Overlay */
+
+
+#loading{
+
+
+display:none;
+
+
+position:fixed;
+
+
+top:0;
+
+
+left:0;
+
+
+width:100%;
+
+
+height:100%;
+
+
+background:rgba(255,255,255,0.85);
+
+
+z-index:9999;
+
+
+text-align:center;
+
+
+padding-top:200px;
+
+
+font-size:25px;
+
+
+color:#0066cc;
+
+
+}
+
+
+
+
+#progressContainer{
+
+
+width:60%;
+
+
+height:35px;
+
+
+background:#ddd;
+
+
+margin:auto;
+
+
+border-radius:20px;
+
+
+overflow:hidden;
+
+
+}
+
+
+
+
+#progressBar{
+
+
+height:100%;
+
+
+width:0%;
+
+
+background:#0066cc;
+
+
+color:white;
+
+
+line-height:35px;
+
+
+font-size:18px;
+
+
+transition:width 0.2s;
+
+
+}
+
+
+
 
 </style>
 
@@ -67,55 +204,117 @@ margin-top:30px;
 <body>
 
 
-<div class="container">
+
+<div id="loading">
 
 
-<h1>
-Pressure Surge Detection Tool
-</h1>
+<div id="progressContainer">
 
 
-<input 
-type="file"
-id="csvFile"
-accept=".csv">
+<div id="progressBar">
+
+0%
+
+</div>
+
+
+</div>
 
 
 <br>
+
+
+Analysing CSV... Please wait
+
+
+</div>
+
+
+
+
+
+<div class="container">
+
+
+
+<h1>
+
+Pressure Surge Detection Tool
+
+</h1>
+
+
+
+
+<input
+
+type="file"
+
+id="csvFile"
+
+accept=".csv">
+
+
+
+<br>
+
 
 
 Pressure jump threshold:
 
-<input 
+
+<input
+
 type="number"
+
 id="pressureLimit"
+
 value="1">
 
 
 
+
+
 <br>
+
+
 
 
 Time gap threshold (seconds):
 
-<input 
+
+<input
+
 type="number"
+
 id="timeLimit"
+
 value="1">
+
+
 
 
 
 <br>
 
 
+
+
 <button onclick="processCSV()">
+
 Analyse CSV
+
 </button>
+
 
 
 <button onclick="downloadPNG()">
+
 Download Graph PNG
+
 </button>
+
+
 
 
 
@@ -123,7 +322,10 @@ Download Graph PNG
 
 
 
+
 <canvas id="chart"></canvas>
+
+
 
 
 </div>
@@ -133,43 +335,71 @@ Download Graph PNG
 
 
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/luxon"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon"></script>
 
 
 <script>
 
-let chart = null;
+
+let chart=null;
+
+
 
 
 
 function processCSV(){
 
 
+
+document.getElementById("loading").style.display="block";
+
+
+
 let file =
+
 document.getElementById("csvFile").files[0];
+
+
+
 
 
 if(!file){
 
+
+document.getElementById("loading").style.display="none";
+
+
 alert("Please upload CSV first");
+
+
 return;
+
 
 }
 
 
 
+
+
+
 let pressureLimit =
+
 Number(document.getElementById("pressureLimit").value);
 
 
+
+
+
 let timeLimit =
+
 Number(document.getElementById("timeLimit").value);
 
 
 
-let reader = new FileReader();
+
+
+let reader=new FileReader();
+
+
 
 
 
@@ -177,32 +407,88 @@ reader.onload=function(e){
 
 
 
+
+
 let rows =
+
 e.target.result.trim().split("\n");
+
+
+
+
+let totalRows = rows.length;
+
+
+
+let progressBar =
+
+document.getElementById("progressBar");
+
+
 
 
 let data=[];
 
 
 
-rows.forEach(row=>{
+
+
+
+rows.forEach((row,index)=>{
+
+
+
+
+
+let progress =
+
+Math.round(((index+1)/totalRows)*100);
+
+
+
+
+
+progressBar.style.width =
+
+progress+"%";
+
+
+
+progressBar.innerHTML =
+
+progress+"%";
+
+
+
+
+
+
 
 
 let cols=row.split(",");
 
 
+
+
 if(cols.length<3)
+
 return;
 
 
 
+
+
 let date=cols[0].trim();
+
+
 let time=cols[1].trim();
 
 
 
-let pressure =
-parseFloat(cols[2]);
+
+let pressure=parseFloat(cols[2]);
+
+
 
 
 
@@ -210,48 +496,81 @@ let parts=date.split("/");
 
 
 
+
+
 let cleanTime =
+
+
 time.replace(
+
 /(\d+:\d+:\d+)\s(AM|PM)\.(\d+)/,
+
 "$1.$3 $2"
+
 );
+
+
 
 
 
 let dt =
+
+
 new Date(
+
 parts[2]+"-"+parts[1]+"-"+parts[0]
+
 +" "
+
 +cleanTime
+
 );
+
+
+
 
 
 
 if(!isNaN(dt) && !isNaN(pressure)){
 
 
+
 data.push({
+
 
 x:dt,
 
+
 pressure:pressure
 
+
+
 });
+
 
 
 }
 
 
 
+
+
 });
 
 
 
 
 
+
+
+
 data.sort(
+
 (a,b)=>a.x-b.x
+
 );
+
+
 
 
 
@@ -259,7 +578,11 @@ data.sort(
 
 let graph=[];
 
+
 let surgeCount=0;
+
+
+
 
 
 
@@ -267,33 +590,53 @@ let surgeCount=0;
 for(let i=0;i<data.length;i++){
 
 
+
 let value=data[i].pressure;
+
+
 
 
 
 if(i>0){
 
 
+
 let pressureChange =
+
 Math.abs(
-data[i].pressure -
+
+data[i].pressure-
+
 data[i-1].pressure
+
 );
 
 
 
+
+
+
 let timeChange =
+
 (data[i].x-data[i-1].x)/1000;
 
 
 
+
+
+
+
 if(
+
 pressureChange > pressureLimit ||
+
 timeChange > timeLimit
+
 ){
 
 
 value=null;
+
 
 surgeCount++;
 
@@ -302,29 +645,48 @@ surgeCount++;
 
 
 
+
+
 }
+
+
+
+
 
 
 
 graph.push({
 
+
 x:data[i].x,
 
+
 y:value
+
 
 
 });
 
 
 
+
 }
 
 
 
 
+
+
+
 document.getElementById("result").innerHTML =
+
+
 "Surge boundaries detected: "
+
 +surgeCount;
+
+
+
 
 
 
@@ -332,7 +694,32 @@ createGraph(graph);
 
 
 
+
+
+
+
+setTimeout(()=>{
+
+
+document.getElementById("loading").style.display="none";
+
+
+progressBar.style.width="0%";
+
+
+progressBar.innerHTML="0%";
+
+
+
+},500);
+
+
+
+
+
 }
+
+
 
 
 
@@ -340,7 +727,11 @@ reader.readAsText(file);
 
 
 
+
+
 }
+
+
 
 
 
@@ -351,18 +742,28 @@ reader.readAsText(file);
 function createGraph(data){
 
 
+
+
+
 if(chart){
 
+
 chart.destroy();
+
 
 }
 
 
 
-chart =
-new Chart(
+
+
+
+
+chart=new Chart(
+
 
 document.getElementById("chart"),
+
 
 {
 
@@ -370,7 +771,10 @@ document.getElementById("chart"),
 type:"line",
 
 
+
+
 data:{
+
 
 
 datasets:[{
@@ -378,30 +782,44 @@ datasets:[{
 
 label:"Pressure",
 
+
 data:data,
+
 
 borderColor:"blue",
 
+
 borderWidth:1,
+
 
 pointRadius:0,
 
+
 spanGaps:false
+
 
 
 }]
 
 
+
 },
+
+
+
 
 
 options:{
 
 
+
 responsive:true,
 
 
+
+
 plugins:{
+
 
 
 title:{
@@ -409,37 +827,90 @@ title:{
 
 display:true,
 
+
 text:"Pressure Surges"
+
 
 }
 
 
+
 },
+
+
+
+
 
 
 
 scales:{
 
 
+
 x:{
-    type:"time",
 
-    time:{
-        unit:"minute",
-        displayFormats:{
-            minute:"dd/MM/yyyy HH:mm"
-        },
-        tooltipFormat:"dd/MM/yyyy HH:mm:ss"
-    },
 
-    ticks:{
-        autoSkip:true,
-        maxTicksLimit:10
-    }
+
+type:"time",
+
+
+
+
+
+time:{
+
+
+unit:"minute",
+
+
+
+displayFormats:{
+
+
+minute:"dd/MM/yyyy HH:mm"
+
+
 },
 
 
+
+tooltipFormat:
+
+
+"dd/MM/yyyy HH:mm:ss"
+
+
+
+},
+
+
+
+
+
+ticks:{
+
+
+autoSkip:true,
+
+
+maxTicksLimit:10
+
+
+}
+
+
+
+
+
+},
+
+
+
+
+
+
 y:{
+
 
 
 title:{
@@ -447,14 +918,10 @@ title:{
 
 display:true,
 
+
 text:"Pressure"
 
 
-}
-
-
-}
-
 
 }
 
@@ -465,6 +932,18 @@ text:"Pressure"
 
 
 }
+
+
+
+
+
+}
+
+
+
+}
+
+
 
 );
 
@@ -477,37 +956,44 @@ text:"Pressure"
 
 
 
+
+
+
 function downloadPNG(){
 
 
 
-if(chart === null){
+if(chart===null){
 
 
 alert("Please generate the graph first");
 
+
 return;
+
 
 }
 
 
 
-let link =
-document.createElement("a");
 
 
 
-link.download =
-"Pressure_Surge_Graph.png";
+let link=document.createElement("a");
 
 
 
-link.href =
-chart.toBase64Image();
+link.download="Pressure_Surge_Graph.png";
+
+
+
+link.href=chart.toBase64Image();
 
 
 
 link.click();
+
+
 
 
 
@@ -516,6 +1002,7 @@ link.click();
 
 
 </script>
+
 
 
 
